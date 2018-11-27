@@ -6,9 +6,6 @@ document.addEventListener('DOMContentLoaded', function() {
     panel.remove();
   })
 
-  const template = document.querySelector('#template').textContent;
-  // console.log(template);
-  const list = document.querySelector('.friends');
   const listAreas = document.querySelectorAll('.panel__friends-container');
 
   VK.init({
@@ -47,26 +44,67 @@ auth()
     return callAPI('friends.get', { fields: 'photo_50'})
   })
   .then((friends) => {
-    createListItem(friends.items);
+    const resultArr = getDataArrays(friends.items);
+    fillListsOnPageLoad(...resultArr);
     return friends.items;
 
   }).then((data) => {
     console.log(data);
-    replaceFriendOnClick();
-    saveFriends();
+    let [leftArr] = getDataArrays(data);
+    let [, rightArr] = getDataArrays(data);
+    handleFriendsReplacement(data, leftArr, rightArr);
+    saveFriends(leftArr, rightArr);
     makeDnD(listAreas);
     const fullNamesArr = getFullNames(data);
-    // console.log(fullNamesArr);
-    filterInitialList(fullNamesArr, data);
   });
 
+  function updateDataOnClick (target, data, leftArr, rightArr) {
+      if(target.classList.contains('friends__add-btn')) {
+        const id = target.parentNode.dataset.id;
+        const newElem = data.filter((item) => item.id == id);
+        rightArr.push(...newElem);
+        leftArr.splice(leftArr.indexOf(newElem), 1);
+      } else if(target.classList.contains('friends__remove-btn')) {
+        const id = target.parentNode.dataset.id;
+        const newElem = data.filter((item) => item.id == id);
+        rightArr.splice(rightArr.indexOf(newElem), 1);
+        leftArr.push(newElem);
+      }
+  }
 
-function createListItem (items) {
+  function changeFriendsHTML (targ) {
+    const initialList = document.querySelector('#friends-initial');
+    const selectedList = document.querySelector('#friends-selected');
+    if(targ.classList.contains('friends__add-btn')) {
+      selectedList.appendChild(targ.parentNode);
+    } else if(targ.classList.contains('friends__remove-btn')) {
+      initialList.appendChild(targ.parentNode);
+    }
+  }
+
+
+  function handleFriendsReplacement(data, leftArr, rightArr) {
+    const listWrapper = document.querySelector('.panel__friends-wrapper');
+    listWrapper.addEventListener('click', e => {
+      const target = e.target;
+      changeFriendsHTML(target);
+      updateDataOnClick(target, data, leftArr, rightArr);
+    })
+  }
+
+  function getDataArrays (data) {
+    const leftListArr = data;
+    const rightListArr = [];
+    return [leftListArr, rightListArr]
+  }
+
+
+  function createListItem (arr, list) {
     const fragment = document.createDocumentFragment();
-
-    for (item of items) {
+    arr.forEach((item) => {
       const li = document.createElement('li');
       li.classList.add('friends__item');
+      li.dataset.id = item.id;
       const img = document.createElement('img');
       img.classList.add('friends__img');
       img.src = item.photo_50;
@@ -84,24 +122,18 @@ function createListItem (items) {
       li.appendChild(removeBtn);
       li.draggable = true;
       fragment.appendChild(li);
-    }
+    })
     list.appendChild(fragment);
 }
 
-
-
-  function replaceFriendOnClick() {
-    const initialList = document.querySelector('#friends-initial');
-    const selectedList = document.querySelector('#friends-selected');
-    const listWrapper = document.querySelector('.panel__friends-wrapper');
-    listWrapper.addEventListener('click', e => {
-      const target = e.target;
-      if(target.classList.contains('friends__add-btn')) {
-        selectedList.appendChild(target.parentNode);
-      } else if(target.classList.contains('friends__remove-btn')) {
-        initialList.appendChild(target.parentNode);
-      }
-    })
+  function fillListsOnPageLoad (leftListArr, rightListArr) {
+    const leftList = document.querySelector('#friends-initial');
+    const rightList = document.querySelector('#friends-selected');
+    const storage = localStorage;
+    if(!storage.friends) {
+      createListItem(leftListArr, leftList);
+      createListItem(rightListArr, rightList);
+    }
   }
 
   function getFullNames(data) {
@@ -114,10 +146,13 @@ function createListItem (items) {
     return names.filter((item) => isMatching(item, value.toLowerCase() ))
   }
 
-  function saveFriends() {
+  function saveFriends(leftArr, rightArr) {
     const saveBtn = document.querySelector('.save-btn');
     saveBtn.addEventListener('click', () => {
-      alert('Сохранено!')
+      console.log({
+        leftArr: leftArr,
+        rightArr: rightArr
+      })
     })
   }
 
@@ -142,7 +177,10 @@ function createListItem (items) {
         // console.log(item);
         if(!selectedArr.includes(item)) {
           console.log('Not includes');
-          createListItem(data);
+          const li = document.createElement('li');
+          li.classList.add('friends__item');
+
+          // const
         } else {
           console.log('includes!!');
         }
@@ -151,9 +189,6 @@ function createListItem (items) {
     });
   };
 
-  function filterRightList() {
-
-  }
 
   function makeDnD(zones) {
     let currentDrag;
@@ -167,7 +202,6 @@ function createListItem (items) {
         zone.addEventListener('dragenter', e => {
           e.preventDefault()
           if(currentDrag.source !== zone && e.target.classList.contains('friends__item')) {
-            console.log('enter;');
             if (document.querySelector('.mark')) {
               document.querySelector('.mark').remove()
               // console.log('remove');
