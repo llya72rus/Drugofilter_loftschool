@@ -6,7 +6,6 @@ document.addEventListener('DOMContentLoaded', function() {
     panel.remove();
   })
 
-  const listAreas = document.querySelectorAll('.panel__friends-container');
 
   VK.init({
     apiId: 6762284
@@ -55,18 +54,17 @@ auth()
     handleFriendsReplacement(data, leftArr, rightArr);
     saveFriends(leftArr, rightArr);
     makeDnD(listAreas);
-    const fullNamesArr = getFullNames(data);
   });
 
-  function updateDataOnClick (target, data, leftArr, rightArr) {
+  function updateDataOnClick (target, leftArr, rightArr) {
       if(target.classList.contains('friends__add-btn')) {
         const id = target.parentNode.dataset.id;
-        const newElem = data.filter((item) => item.id == id);
+        const newElem = leftArr.filter((item) => item.id == id);
         rightArr.push(...newElem);
         leftArr.splice(leftArr.indexOf(newElem), 1);
       } else if(target.classList.contains('friends__remove-btn')) {
         const id = target.parentNode.dataset.id;
-        const newElem = data.filter((item) => item.id == id);
+        const newElem = rightArr.filter((item) => item.id == id);
         rightArr.splice(rightArr.indexOf(newElem), 1);
         leftArr.push(newElem);
       }
@@ -88,7 +86,7 @@ auth()
     listWrapper.addEventListener('click', e => {
       const target = e.target;
       changeFriendsHTML(target);
-      updateDataOnClick(target, data, leftArr, rightArr);
+      updateDataOnClick(target, leftArr, rightArr);
     })
   }
 
@@ -136,15 +134,15 @@ auth()
     }
   }
 
-  function getFullNames(data) {
-    return data.map((item) => {
-      return item.first_name + ' ' + item.last_name;
-    })
-  }
+  // function getFullNames(data) {
+  //   return data.map((item) => {
+  //     return item.first_name + ' ' + item.last_name;
+  //   })
+  // }
 
-  function createFilteredArr(names, value) {
-    return names.filter((item) => isMatching(item, value.toLowerCase() ))
-  }
+  // function createFilteredArr(names, value) {
+  //   return names.filter((item) => isMatching(item, value.toLowerCase() ))
+  // }
 
   function saveFriends(leftArr, rightArr) {
     const saveBtn = document.querySelector('.save-btn');
@@ -156,41 +154,41 @@ auth()
     })
   }
 
-  function isMatching (full, chunk)  {
-    return full.toLowerCase().indexOf(chunk.toLowerCase()) > -1;
-  };
+  // function isMatching (full, chunk)  {
+  //   return full.toLowerCase().indexOf(chunk.toLowerCase()) > -1;
+  // };
 
-  function filterInitialList (names, data) {
-    const input = document.querySelector('#initial-list-input');
-    const list = document.querySelector('#friends-initial');
-    // const initialArrNames = data.map(item => item.first_name + ' ' + item.last_name);
-    // console.log("Индекс: " +   names.indexOf("Влад Кравец"));
-    input.addEventListener('keyup', function() {
-      list.innerHTML = '';
-      const selectedItemNodes = document.querySelectorAll('#friends-selected .friends__name');
-      const selectedArr = Array.from(selectedItemNodes).map(item => item.textContent);
-      const filteredArr = createFilteredArr(names, input.value);
-      console.log('Массив в левом списке: ' + filteredArr);
-      console.log('Массив в правом списке: ' +selectedArr);
-      const fragment = document.createDocumentFragment();
-      filteredArr.forEach((item) => {
-        // console.log(item);
-        if(!selectedArr.includes(item)) {
-          console.log('Not includes');
-          const li = document.createElement('li');
-          li.classList.add('friends__item');
+  // function filterInitialList (names, data) {
+  //   const input = document.querySelector('#initial-list-input');
+  //   const list = document.querySelector('#friends-initial');
+  //   // const initialArrNames = data.map(item => item.first_name + ' ' + item.last_name);
+  //   // console.log("Индекс: " +   names.indexOf("Влад Кравец"));
+  //   input.addEventListener('keyup', function() {
+  //     list.innerHTML = '';
+  //     const selectedItemNodes = document.querySelectorAll('#friends-selected .friends__name');
+  //     const selectedArr = Array.from(selectedItemNodes).map(item => item.textContent);
+  //     const filteredArr = createFilteredArr(names, input.value);
+  //     console.log('Массив в левом списке: ' + filteredArr);
+  //     console.log('Массив в правом списке: ' +selectedArr);
+  //     const fragment = document.createDocumentFragment();
+  //     filteredArr.forEach((item) => {
+  //       if(!selectedArr.includes(item)) {
+  //         console.log('Not includes');
+  //         const li = document.createElement('li');
+  //         li.classList.add('friends__item');
 
-          // const
-        } else {
-          console.log('includes!!');
-        }
+  //       } else {
+  //         console.log('includes!!');
+  //       }
 
-      })
-    });
-  };
+  //     })
+  //   });
+  // };
 
 
-  function makeDnD(zones) {
+  function makeDnD() {
+    const zones = document.querySelectorAll('.panel__friends-container');
+
     let currentDrag;
 
     zones.forEach(zone => {
@@ -218,8 +216,6 @@ auth()
 
 
         zone.addEventListener('drop', (e) => {
-          // const mark = document.querySelector('.mark');
-          // if(mark) mark.remove();
             if (currentDrag) {
                 e.preventDefault();
 
