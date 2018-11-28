@@ -1,253 +1,289 @@
 'use scrict';
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
 
-  const panel = document.querySelector('.panel'),
+    const panel = document.querySelector('.panel'),
         panelClose = panel.querySelector('.panel__close'),
         leftList = document.querySelector('.friends-initial'),
         rightList = document.querySelector('.friends-selected');
 
-  // Переменные со списками друзей, которые будут впоследствии обновляться
-  let   leftArr = [],
+    // Переменные со списками друзей, которые будут впоследствии обновляться
+    let leftArr = [],
         rightArr = [];
 
-  // Закрывает панель списков
-  panelClose.addEventListener('click', () => {
-    panel.remove();
-  });
-
-  const storage = localStorage;
-
-  if(storage.friends) {
-    const leftInnerArr = JSON.parse(storage.friends).allFriends;
-    const rightInnerArr = JSON.parse(storage.friends).selectedFriends;
-    leftArr = leftInnerArr;
-    rightArr = rightInnerArr;
-    fillListsOnPageLoaded();
-    handleFriendsReplacement();
-    makeDnD();
-    filterLists();
-    saveFriends();
-    clearStorage();
-  } else {
-    getFriendsFromVK();
-  }
-
-function getFriendsFromVK() {
-  VK.init({
-    apiId: 6762284
-  });
-
-  const callAPI = (method, params) => {
-    params.v = '5.76';
-
-    return new Promise((resolve, reject) => {
-      VK.api(method, params, (data) => {
-        if(data.error) {
-          reject(data.error);
-        } else {
-          resolve(data.response)
-        }
-      })
+    // Закрывает панель списков
+    panelClose.addEventListener('click', () => {
+        panel.remove();
     });
 
-  };
+    const storage = localStorage;
 
-  const auth = () => {
-    return new Promise((resolve, reject) => {
-      VK.Auth.login(data => {
-        if(data.session) {
-          resolve();
-        } else {
-          reject(new Error('Не удалось авторизоваться'));
-        }
-      }, 2)
-    })
-  }
-
-auth()
-  .then(() => {
-    return callAPI('friends.get', { fields: 'photo_50'})
-  })
-  .then((friends) => {
-    leftArr = friends.items;
-    fillListsOnPageLoaded();
-    return friends.items;
-
-  }).then((data) => {
-    handleFriendsReplacement();
-    makeDnD();
-    filterLists();
-    saveFriends();
-    clearStorage();
-  });
-
-}
-  // Функции-обработчики:
-
-
-  // Обновляет данные в списках
-  function updateDataArrays(id, target, firstClass, secondClass) {
-    if(target.classList.contains(firstClass)) {
-      const selectedElem = leftArr.filter((item) => item.id == id);
-      leftArr.splice(leftArr.indexOf(...selectedElem), 1);
-      rightArr.push(...selectedElem);
-    } else if (target.classList.contains(secondClass)) {
-      const selectedElem = rightArr.filter((item) => item.id == id);
-      rightArr.splice(rightArr.indexOf(...selectedElem), 1);
-      leftArr.push(...selectedElem);
+    if (storage.friends) {
+        const leftInnerArr = JSON.parse(storage.friends).allFriends;
+        const rightInnerArr = JSON.parse(storage.friends).selectedFriends;
+        leftArr = leftInnerArr;
+        rightArr = rightInnerArr;
+        fillListsOnPageLoaded();
+        handleFriendsReplacement();
+        makeDnD();
+        filterLists();
+        saveFriends();
+        clearStorage();
+    } else {
+        getFriendsFromVK();
     }
-  }
 
-  // В двух последующих функциях не смог добавлять id параметров, поэтому пришлось доп.функции updateOn... создать
-  function updateDataOnClick (target) {
-      const id = target.parentNode.dataset.id;
-      updateDataArrays(id, target, 'friends__add-btn', 'friends__remove-btn')
-  }
-
-  function updateDataOnDnd (target) {
-    const id = target.dataset.id;
-    console.log(id);
-    updateDataArrays(id, target.parentNode, 'friends-selected', 'friends-initial')
-  }
-
-
-
-  function changeFriendsHTML (targ) {
-    if(targ.classList.contains('friends__add-btn')) {
-      rightList.appendChild(targ.parentNode);
-    } else if(targ.classList.contains('friends__remove-btn')) {
-      leftList.appendChild(targ.parentNode);
-    }
-  }
-
-  function handleFriendsReplacement() {
-    const listWrapper = document.querySelector('.panel__friends-wrapper');
-    listWrapper.addEventListener('click', e => {
-      const target = e.target;
-      changeFriendsHTML(target);
-      updateDataOnClick(target);
-    })
-  }
-
-
-  function createListItem (arr, list) {
-    const fragment = document.createDocumentFragment();
-    arr.forEach((item) => {
-      const li = document.createElement('li');
-      li.classList.add('friends__item');
-      li.dataset.id = item.id;
-      const img = document.createElement('img');
-      img.classList.add('friends__img');
-      img.src = item.photo_50;
-      img.draggable = false;
-      const h4 = document.createElement('h4');
-      h4.classList.add('friends__name');
-      h4.textContent = `${item.first_name} ${item.last_name}`;
-      const addBtn = document.createElement('button');
-      addBtn.classList.add('friends__add-btn');
-      const removeBtn = document.createElement('button');
-      removeBtn.classList.add('friends__remove-btn');
-      li.appendChild(img);
-      li.appendChild(h4);
-      li.appendChild(addBtn);
-      li.appendChild(removeBtn);
-      li.draggable = true;
-      fragment.appendChild(li);
-    })
-    list.appendChild(fragment);
-}
-
-function fillListsOnPageLoaded() {
-  createListItem(leftArr, leftList);
-  createListItem(rightArr, rightList);
-}
-
-
-  function isMatching (firstName, lastName, chunk)  {
-    return firstName.toLowerCase().indexOf(chunk.toLowerCase()) > -1
-    ||
-    lastName.toLowerCase().indexOf(chunk.toLowerCase()) > -1;
-  };
-
-
-
-  function updateHtmlOnKeyup(list, arr, value) {
-    list.innerHTML = '';
-    const filteredArr = arr.filter(item => isMatching(item.first_name, item.last_name, value))
-    createListItem(filteredArr, list);
-    return filteredArr;
-  }
-
-  function filterLists() {
-    const inputs = document.querySelectorAll('.panel__filters-input');
-    const lists = document.querySelectorAll('ul.friends');
-    lists.forEach((list, i) => {
-      inputs[i].addEventListener('keyup', function () {
-        const ths = this;
-        i === 0 ? updateHtmlOnKeyup(list, leftArr, ths.value) : updateHtmlOnKeyup(list, rightArr, ths.value);
-      })
-    })
-
-  }
-
-
-  function makeDnD() {
-    const zones = document.querySelectorAll('.friends');
-
-    let currentDrag;
-
-    zones.forEach(zone => {
-        zone.addEventListener('dragstart', (e) => {
-            e.dataTransfer.setData('text/html', 'dragstart');
-            currentDrag = { source: zone, node: e.target };
+    function getFriendsFromVK() {
+        VK.init({
+            apiId: 6762284
         });
 
-        // zone.addEventListener('dragenter', e => {
-        //   e.preventDefault()
-        //   if(currentDrag.source !== zone) {
-        //     if(e.target.classList.contains('friends__item')) {
-        //       deleteShape();
-        //       console.log('bla')
-        //       const shape = document.createElement('li');
-        //       shape.classList.add('shape');
-        //       if(zone.children.length && !e.target.previousElementSibling.classList.contains('shape')) {
-        //         zone.insertBefore(shape, e.target);
+        const callAPI = (method, params) => {
+            params.v = '5.76';
 
-        //       }else if(zone.children.length && e.target.previousElementSibling.classList.contains('shape')) {
-        //         console.log('previous');
-        //       } else {
-        //         zone.appendChild(shape);
-        //         console.log('Нет детей' + zone.children.length)
-        //       }
-        //     } else {}
-        //   }
-        // })
-
-        zone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-        });
-
-
-        zone.addEventListener('drop', (e) => {
-            if (currentDrag) {
-                e.preventDefault();
-                console.log(currentDrag.node.parentNode)
-                if (currentDrag.source !== zone) {
-                    if(e.target.parentNode.classList.contains('friends__item')) {
-                      zone.insertBefore(currentDrag.node, e.target.parentNode);
-                    } else if(e.target.classList.contains('friends__item')) {
-                      zone.insertBefore(currentDrag.node, e.target);
+            return new Promise((resolve, reject) => {
+                VK.api(method, params, (data) => {
+                    if (data.error) {
+                        reject(data.error);
                     } else {
-                      zone.appendChild(currentDrag.node);
+                        resolve(data.response)
                     }
-                    updateDataOnDnd(currentDrag.node)
-                }
+                })
+            });
 
-                currentDrag = null;
-            }
+        };
+
+        const auth = () => {
+            return new Promise((resolve, reject) => {
+                VK.Auth.login(data => {
+                    if (data.session) {
+                        resolve();
+                    } else {
+                        reject(new Error('Не удалось авторизоваться'));
+                    }
+                }, 2)
+            })
+        }
+
+        auth()
+            .then(() => {
+                return callAPI('friends.get', {
+                    fields: 'photo_50'
+                })
+            })
+            .then((friends) => {
+                leftArr = friends.items;
+                fillListsOnPageLoaded();
+                return friends.items;
+
+            }).then((data) => {
+                handleFriendsReplacement();
+                makeDnD();
+                filterLists();
+                saveFriends();
+                clearStorage();
+            });
+
+    }
+    // Функции-обработчики:
+
+
+    // Обновляет данные в списках
+    function updateDataArrays(id, target, firstClass, secondClass) {
+        if (target.classList.contains(firstClass)) {
+            const selectedElem = leftArr.filter((item) => item.id == id);
+            leftArr.splice(leftArr.indexOf(...selectedElem), 1);
+            rightArr.push(...selectedElem);
+        } else if (target.classList.contains(secondClass)) {
+            const selectedElem = rightArr.filter((item) => item.id == id);
+            rightArr.splice(rightArr.indexOf(...selectedElem), 1);
+            leftArr.push(...selectedElem);
+        }
+    }
+
+    // В двух последующих функциях не смог добавлять id параметров, поэтому пришлось доп.функции updateOn... создать
+    function updateDataOnClick(target) {
+        const id = target.parentNode.dataset.id;
+        updateDataArrays(id, target, 'friends__add-btn', 'friends__remove-btn')
+    }
+
+    function updateDataOnDnd(target) {
+        const id = target.dataset.id;
+        console.log(id);
+        updateDataArrays(id, target.parentNode, 'friends-selected', 'friends-initial')
+    }
+
+
+
+    function changeFriendsHTML(targ) {
+        if (targ.classList.contains('friends__add-btn')) {
+            rightList.appendChild(targ.parentNode);
+        } else if (targ.classList.contains('friends__remove-btn')) {
+            leftList.appendChild(targ.parentNode);
+        }
+    }
+
+    function handleFriendsReplacement() {
+        const listWrapper = document.querySelector('.panel__friends-wrapper');
+        listWrapper.addEventListener('click', e => {
+            const target = e.target;
+            changeFriendsHTML(target);
+            updateDataOnClick(target);
+        })
+    }
+
+
+    function createListItem(arr, list) {
+        const fragment = document.createDocumentFragment();
+        arr.forEach((item) => {
+            const li = document.createElement('li');
+            li.classList.add('friends__item');
+            li.dataset.id = item.id;
+            const img = document.createElement('img');
+            img.classList.add('friends__img');
+            img.src = item.photo_50;
+            img.draggable = false;
+            const h4 = document.createElement('h4');
+            h4.classList.add('friends__name');
+            h4.textContent = `${item.first_name} ${item.last_name}`;
+            const addBtn = document.createElement('button');
+            addBtn.classList.add('friends__add-btn');
+            const removeBtn = document.createElement('button');
+            removeBtn.classList.add('friends__remove-btn');
+            li.appendChild(img);
+            li.appendChild(h4);
+            li.appendChild(addBtn);
+            li.appendChild(removeBtn);
+            li.draggable = true;
+            fragment.appendChild(li);
+        })
+        list.appendChild(fragment);
+    }
+
+    function fillListsOnPageLoaded() {
+        createListItem(leftArr, leftList);
+        createListItem(rightArr, rightList);
+    }
+
+
+    function isMatching(firstName, lastName, chunk) {
+        return firstName.toLowerCase().indexOf(chunk.toLowerCase()) > -1 ||
+            lastName.toLowerCase().indexOf(chunk.toLowerCase()) > -1;
+    };
+
+
+
+    function updateHtmlOnKeyup(list, arr, value) {
+        list.innerHTML = '';
+        const filteredArr = arr.filter(item => isMatching(item.first_name, item.last_name, value))
+        createListItem(filteredArr, list);
+        return filteredArr;
+    }
+
+    function filterLists() {
+        const inputs = document.querySelectorAll('.panel__filters-input');
+        const lists = document.querySelectorAll('ul.friends');
+        lists.forEach((list, i) => {
+            inputs[i].addEventListener('keyup', function () {
+                const ths = this;
+
+                i === 0 ? updateHtmlOnKeyup(list, leftArr, ths.value) : updateHtmlOnKeyup(list, rightArr, ths.value);
+            })
+        })
+
+    }
+
+
+    function makeDnD() {
+        const zones = document.querySelectorAll('.friends');
+
+        let currentDrag;
+
+        zones.forEach(zone => {
+            zone.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text/html', 'dragstart');
+                currentDrag = {
+                    source: zone,
+                    node: e.target
+                };
+            });
+
+            // zone.addEventListener('dragenter', e => {
+            //   e.preventDefault()
+            //   if(currentDrag.source !== zone) {
+            //     if(e.target.classList.contains('friends__item')) {
+            //       deleteShape();
+            //       console.log('bla')
+            //       const shape = document.createElement('li');
+            //       shape.classList.add('shape');
+            //       if(zone.children.length && !e.target.previousElementSibling.classList.contains('shape')) {
+            //         zone.insertBefore(shape, e.target);
+
+            //       }else if(zone.children.length && e.target.previousElementSibling.classList.contains('shape')) {
+            //         console.log('previous');
+            //       } else {
+            //         zone.appendChild(shape);
+            //         console.log('Нет детей' + zone.children.length)
+            //       }
+            //     } else {}
+            //   }
+            // })
+
+            zone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+            });
+
+
+            zone.addEventListener('drop', (e) => {
+                if (currentDrag) {
+                    e.preventDefault();
+                    if (currentDrag.source !== zone) {
+                        if (e.target.parentNode.classList.contains('friends__item')) {
+                            zone.insertBefore(currentDrag.node, e.target.parentNode);
+                        } else if (e.target.classList.contains('friends__item')) {
+                            zone.insertBefore(currentDrag.node, e.target);
+                        } else {
+                            zone.appendChild(currentDrag.node);
+                        }
+                        updateDataOnDnd(currentDrag.node)
+                    }
+
+                    currentDrag = null;
+                }
+            });
         });
-    })
-}
+    }
+
+    // Скопипастил нагло функцию для сортировки по алфавиту правый список при обновлении страницы
+    function sortByKey(array, key) {
+        return array.sort(function (a, b) {
+            const x = a[key];
+            const y = b[key];
+
+            return ((x < y) ? -1 : ((x > y) ? 1 : 0));
+        });
+    }
+
+    function saveFriends() {
+        const saveBtn = document.querySelector('.save-btn');
+
+        saveBtn.addEventListener('click', () => {
+            const sortedRightArr = sortByKey(rightArr, 'first_name');
+            storage.friends = JSON.stringify({
+                allFriends: leftArr,
+                selectedFriends: sortedRightArr
+            });
+        })
+    }
+
+    function clearStorage() {
+        const clearBtn = document.querySelector('.clear-btn');
+        clearBtn.addEventListener('click', () => {
+            if (storage.friends) {
+                storage.friends = "";
+            }
+            location.reload();
+        })
+    }
 
 
 });
