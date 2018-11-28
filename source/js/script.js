@@ -1,14 +1,38 @@
 'use scrict';
-let leftArr = [],
-    rightArr = []
 document.addEventListener('DOMContentLoaded', function() {
+
   const panel = document.querySelector('.panel'),
-        panelClose = panel.querySelector('.panel__close');
+        panelClose = panel.querySelector('.panel__close'),
+        leftList = document.querySelector('.friends-initial'),
+        rightList = document.querySelector('.friends-selected');
+
+  // Переменные со списками друзей, которые будут впоследствии обновляться
+  let   leftArr = [],
+        rightArr = [];
+
+  // Закрывает панель списков
   panelClose.addEventListener('click', () => {
     panel.remove();
   });
 
+  const storage = localStorage;
 
+  if(storage.friends) {
+    const leftInnerArr = JSON.parse(storage.friends).allFriends;
+    const rightInnerArr = JSON.parse(storage.friends).selectedFriends;
+    leftArr = leftInnerArr;
+    rightArr = rightInnerArr;
+    fillListsOnPageLoaded();
+    handleFriendsReplacement();
+    makeDnD();
+    filterLists();
+    saveFriends();
+    clearStorage();
+  } else {
+    getFriendsFromVK();
+  }
+
+function getFriendsFromVK() {
   VK.init({
     apiId: 6762284
   });
@@ -45,29 +69,26 @@ auth()
     return callAPI('friends.get', { fields: 'photo_50'})
   })
   .then((friends) => {
-    const resultArr = getDataArrays(friends.items);
-    fillListsOnPageLoad(...resultArr);
+    leftArr = friends.items;
+    fillListsOnPageLoaded();
     return friends.items;
 
   }).then((data) => {
-    console.log(data);
-    leftArr = getDataArrays(data)[0];
-    console.log(leftArr);
-    rightArr = getDataArrays(data)[1];
     handleFriendsReplacement();
-    makeDnD(leftArr, rightArr);
-    filterLists(leftArr, rightArr);
-    saveFriends(leftArr, rightArr);
+    makeDnD();
+    filterLists();
+    saveFriends();
+    clearStorage();
   });
 
+}
+  // Функции-обработчики:
 
-  // Функции
 
+  // Обновляет данные в списках
   function updateDataArrays(id, target, firstClass, secondClass) {
     if(target.classList.contains(firstClass)) {
       const selectedElem = leftArr.filter((item) => item.id == id);
-      console.log(selectedElem);
-      console.log(leftArr.indexOf(...selectedElem));
       leftArr.splice(leftArr.indexOf(...selectedElem), 1);
       rightArr.push(...selectedElem);
     } else if (target.classList.contains(secondClass)) {
@@ -77,22 +98,27 @@ auth()
     }
   }
 
+  // В двух последующих функциях не смог добавлять id параметров, поэтому пришлось доп.функции updateOn... создать
   function updateDataOnClick (target) {
       const id = target.parentNode.dataset.id;
-      console.log('HTML-id: ' + id);
       updateDataArrays(id, target, 'friends__add-btn', 'friends__remove-btn')
   }
 
-  function changeFriendsHTML (targ) {
-    const initialList = document.querySelector('.friends-initial');
-    const selectedList = document.querySelector('.friends-selected');
-    if(targ.classList.contains('friends__add-btn')) {
-      selectedList.appendChild(targ.parentNode);
-    } else if(targ.classList.contains('friends__remove-btn')) {
-      initialList.appendChild(targ.parentNode);
-    }
+  function updateDataOnDnd (target) {
+    const id = target.dataset.id;
+    console.log(id);
+    updateDataArrays(id, target.parentNode, 'friends-selected', 'friends-initial')
   }
 
+
+
+  function changeFriendsHTML (targ) {
+    if(targ.classList.contains('friends__add-btn')) {
+      rightList.appendChild(targ.parentNode);
+    } else if(targ.classList.contains('friends__remove-btn')) {
+      leftList.appendChild(targ.parentNode);
+    }
+  }
 
   function handleFriendsReplacement() {
     const listWrapper = document.querySelector('.panel__friends-wrapper');
@@ -103,15 +129,8 @@ auth()
     })
   }
 
-  function getDataArrays (data) {
-    const leftListArr = data;
-    const rightListArr = [];
-    return [leftListArr, rightListArr]
-  }
-
 
   function createListItem (arr, list) {
-    // console.log(arr);
     const fragment = document.createDocumentFragment();
     arr.forEach((item) => {
       const li = document.createElement('li');
@@ -138,35 +157,11 @@ auth()
     list.appendChild(fragment);
 }
 
-  function fillListsOnPageLoad (leftListArr, rightListArr) {
-    const leftList = document.querySelector('.friends-initial');
-    const rightList = document.querySelector('.friends-selected');
-    const storage = localStorage;
-    if(!storage.friends) {
-      createListItem(leftListArr, leftList);
-      createListItem(rightListArr, rightList);
-    }
-  }
+function fillListsOnPageLoaded() {
+  createListItem(leftArr, leftList);
+  createListItem(rightArr, rightList);
+}
 
-  function getFullNames(arr) {
-    return arr.map((item) => {
-      return item.first_name + ' ' + item.last_name;
-    })
-  }
-
-  function createFilteredArr(names, value) {
-    return names.filter(item => isMatching(item, value.toLowerCase() ))
-  }
-
-  function saveFriends() {
-    const saveBtn = document.querySelector('.save-btn');
-    saveBtn.addEventListener('click', () => {
-      console.log({
-        leftArr: leftArr,
-        rightArr: rightArr
-      })
-    })
-  }
 
   function isMatching (firstName, lastName, chunk)  {
     return firstName.toLowerCase().indexOf(chunk.toLowerCase()) > -1
@@ -179,7 +174,8 @@ auth()
   function updateHtmlOnKeyup(list, arr, value) {
     list.innerHTML = '';
     const filteredArr = arr.filter(item => isMatching(item.first_name, item.last_name, value))
-    console.log(filteredArr);
+    createListItem(filteredArr, list);
+    return filteredArr;
   }
 
   function filterLists() {
@@ -195,14 +191,7 @@ auth()
   }
 
 
-  function updateDataOnDnd (target) {
-    const id = target.dataset.id;
-    console.log(id);
-    updateDataArrays(id, target.parentNode, 'friends-selected', 'friends-initial')
-  }
-
-
-  function makeDnD(leftArr, rightArr) {
+  function makeDnD() {
     const zones = document.querySelectorAll('.friends');
 
     let currentDrag;

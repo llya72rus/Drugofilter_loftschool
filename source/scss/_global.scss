@@ -65,8 +65,9 @@ button {
   }
 
   &__bottom {
+    display: flex;
+    justify-content: space-between;
     padding: 8px 7px;
-    text-align: right;
   }
 
   &__btn {
@@ -79,6 +80,12 @@ button {
     color: #ffffff;
     font-size: 12px;
     font-weight: 300;
+
+    &.clear-btn {
+      background: transparent;
+      border: 1px solid #ff8663;
+      color: #ff8663;
+    }
   }
 
   &__friends-list-title {
