@@ -268,20 +268,20 @@ button {
   }
 }
 
-#friends-selected {
+.friends-selected {
   .friends__add-btn {
     display: none;
   }
 }
 
 
-#friends-initial {
+.friends-initial {
   .friends__remove-btn {
     display: none;
   }
 }
 
-.mark {
+.shape {
   height: 65px;
   border: 2px dashed #f0f0f0;
   background: transparent;

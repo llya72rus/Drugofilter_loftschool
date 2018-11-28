@@ -6,7 +6,7 @@
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <link href="https://fonts.googleapis.com/css?family=Fira+Sans:300,400,500&amp;subset=cyrillic" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.0.12/handlebars.min.js"></script>
+  <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.0.12/handlebars.min.js"></script> -->
   <script src="https://vk.com/js/api/openapi.js"></script>
   <title>Drugofilter</title>
 </head>
@@ -23,14 +23,14 @@
         <div class="panel__filters-wrapper"><input type="text" id="selected-list-input" placeholder="Начните вводить имя друга" class="panel__filters-input"></div>
      </div>
      <div class="panel__friends-wrapper">
-       <div class="panel__friends-container panel__friends-container--all">
+       <div class="panel__friends-container">
         <span class="panel__friends-list-title">Ваши друзья</span>
-        <ul class="friends" id="friends-initial">
+        <ul class="friends friends-initial">
         </ul>
       </div>
-       <div class="panel__friends-container panel__friends-container--selected">
+       <div class="panel__friends-container">
         <span class="panel__friends-list-title">Друзья в списке</span>
-        <ul class="friends" id="friends-selected">
+        <ul class="friends friends-selected">
         </ul>
        </div>
      </div>

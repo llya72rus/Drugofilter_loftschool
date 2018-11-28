@@ -1,10 +1,12 @@
 'use scrict';
+let leftArr = [],
+    rightArr = []
 document.addEventListener('DOMContentLoaded', function() {
   const panel = document.querySelector('.panel'),
         panelClose = panel.querySelector('.panel__close');
   panelClose.addEventListener('click', () => {
     panel.remove();
-  })
+  });
 
 
   VK.init({
@@ -49,30 +51,41 @@ auth()
 
   }).then((data) => {
     console.log(data);
-    let [leftArr] = getDataArrays(data);
-    let [, rightArr] = getDataArrays(data);
-    handleFriendsReplacement(data, leftArr, rightArr);
+    leftArr = getDataArrays(data)[0];
+    console.log(leftArr);
+    rightArr = getDataArrays(data)[1];
+    handleFriendsReplacement();
+    makeDnD(leftArr, rightArr);
+    filterLists(leftArr, rightArr);
     saveFriends(leftArr, rightArr);
-    makeDnD(listAreas);
   });
 
-  function updateDataOnClick (target, leftArr, rightArr) {
-      if(target.classList.contains('friends__add-btn')) {
-        const id = target.parentNode.dataset.id;
-        const newElem = leftArr.filter((item) => item.id == id);
-        rightArr.push(...newElem);
-        leftArr.splice(leftArr.indexOf(newElem), 1);
-      } else if(target.classList.contains('friends__remove-btn')) {
-        const id = target.parentNode.dataset.id;
-        const newElem = rightArr.filter((item) => item.id == id);
-        rightArr.splice(rightArr.indexOf(newElem), 1);
-        leftArr.push(newElem);
-      }
+
+  // Функции
+
+  function updateDataArrays(id, target, firstClass, secondClass) {
+    if(target.classList.contains(firstClass)) {
+      const selectedElem = leftArr.filter((item) => item.id == id);
+      console.log(selectedElem);
+      console.log(leftArr.indexOf(...selectedElem));
+      leftArr.splice(leftArr.indexOf(...selectedElem), 1);
+      rightArr.push(...selectedElem);
+    } else if (target.classList.contains(secondClass)) {
+      const selectedElem = rightArr.filter((item) => item.id == id);
+      rightArr.splice(rightArr.indexOf(...selectedElem), 1);
+      leftArr.push(...selectedElem);
+    }
+  }
+
+  function updateDataOnClick (target) {
+      const id = target.parentNode.dataset.id;
+      console.log('HTML-id: ' + id);
+      updateDataArrays(id, target, 'friends__add-btn', 'friends__remove-btn')
   }
 
   function changeFriendsHTML (targ) {
-    const initialList = document.querySelector('#friends-initial');
-    const selectedList = document.querySelector('#friends-selected');
+    const initialList = document.querySelector('.friends-initial');
+    const selectedList = document.querySelector('.friends-selected');
     if(targ.classList.contains('friends__add-btn')) {
       selectedList.appendChild(targ.parentNode);
     } else if(targ.classList.contains('friends__remove-btn')) {
@@ -81,12 +94,12 @@ auth()
   }
 
 
-  function handleFriendsReplacement(data, leftArr, rightArr) {
+  function handleFriendsReplacement() {
     const listWrapper = document.querySelector('.panel__friends-wrapper');
     listWrapper.addEventListener('click', e => {
       const target = e.target;
       changeFriendsHTML(target);
-      updateDataOnClick(target, leftArr, rightArr);
+      updateDataOnClick(target);
     })
   }
 
@@ -98,6 +111,7 @@ auth()
 
 
   function createListItem (arr, list) {
+    // console.log(arr);
     const fragment = document.createDocumentFragment();
     arr.forEach((item) => {
       const li = document.createElement('li');
@@ -125,8 +139,8 @@ auth()
 }
 
   function fillListsOnPageLoad (leftListArr, rightListArr) {
-    const leftList = document.querySelector('#friends-initial');
-    const rightList = document.querySelector('#friends-selected');
+    const leftList = document.querySelector('.friends-initial');
+    const rightList = document.querySelector('.friends-selected');
     const storage = localStorage;
     if(!storage.friends) {
       createListItem(leftListArr, leftList);
@@ -134,17 +148,17 @@ auth()
     }
   }
 
-  // function getFullNames(data) {
-  //   return data.map((item) => {
-  //     return item.first_name + ' ' + item.last_name;
-  //   })
-  // }
+  function getFullNames(arr) {
+    return arr.map((item) => {
+      return item.first_name + ' ' + item.last_name;
+    })
+  }
 
-  // function createFilteredArr(names, value) {
-  //   return names.filter((item) => isMatching(item, value.toLowerCase() ))
-  // }
+  function createFilteredArr(names, value) {
+    return names.filter(item => isMatching(item, value.toLowerCase() ))
+  }
 
-  function saveFriends(leftArr, rightArr) {
+  function saveFriends() {
     const saveBtn = document.querySelector('.save-btn');
     saveBtn.addEventListener('click', () => {
       console.log({
@@ -154,40 +168,42 @@ auth()
     })
   }
 
-  // function isMatching (full, chunk)  {
-  //   return full.toLowerCase().indexOf(chunk.toLowerCase()) > -1;
-  // };
-
-  // function filterInitialList (names, data) {
-  //   const input = document.querySelector('#initial-list-input');
-  //   const list = document.querySelector('#friends-initial');
-  //   // const initialArrNames = data.map(item => item.first_name + ' ' + item.last_name);
-  //   // console.log("Индекс: " +   names.indexOf("Влад Кравец"));
-  //   input.addEventListener('keyup', function() {
-  //     list.innerHTML = '';
-  //     const selectedItemNodes = document.querySelectorAll('#friends-selected .friends__name');
-  //     const selectedArr = Array.from(selectedItemNodes).map(item => item.textContent);
-  //     const filteredArr = createFilteredArr(names, input.value);
-  //     console.log('Массив в левом списке: ' + filteredArr);
-  //     console.log('Массив в правом списке: ' +selectedArr);
-  //     const fragment = document.createDocumentFragment();
-  //     filteredArr.forEach((item) => {
-  //       if(!selectedArr.includes(item)) {
-  //         console.log('Not includes');
-  //         const li = document.createElement('li');
-  //         li.classList.add('friends__item');
-
-  //       } else {
-  //         console.log('includes!!');
-  //       }
-
-  //     })
-  //   });
-  // };
+  function isMatching (firstName, lastName, chunk)  {
+    return firstName.toLowerCase().indexOf(chunk.toLowerCase()) > -1
+    ||
+    lastName.toLowerCase().indexOf(chunk.toLowerCase()) > -1;
+  };
 
 
-  function makeDnD() {
-    const zones = document.querySelectorAll('.panel__friends-container');
+
+  function updateHtmlOnKeyup(list, arr, value) {
+    list.innerHTML = '';
+    const filteredArr = arr.filter(item => isMatching(item.first_name, item.last_name, value))
+    console.log(filteredArr);
+  }
+
+  function filterLists() {
+    const inputs = document.querySelectorAll('.panel__filters-input');
+    const lists = document.querySelectorAll('ul.friends');
+    lists.forEach((list, i) => {
+      inputs[i].addEventListener('keyup', function () {
+        const ths = this;
+        i === 0 ? updateHtmlOnKeyup(list, leftArr, ths.value) : updateHtmlOnKeyup(list, rightArr, ths.value);
+      })
+    })
+
+  }
+
+
+  function updateDataOnDnd (target) {
+    const id = target.dataset.id;
+    console.log(id);
+    updateDataArrays(id, target.parentNode, 'friends-selected', 'friends-initial')
+  }
+
+
+  function makeDnD(leftArr, rightArr) {
+    const zones = document.querySelectorAll('.friends');
 
     let currentDrag;
 
@@ -197,18 +213,26 @@ auth()
             currentDrag = { source: zone, node: e.target };
         });
 
-        zone.addEventListener('dragenter', e => {
-          e.preventDefault()
-          if(currentDrag.source !== zone && e.target.classList.contains('friends__item')) {
-            if (document.querySelector('.mark')) {
-              document.querySelector('.mark').remove()
-              // console.log('remove');
-            }
-              const mark = document.createElement('li');
-              mark.classList.add('mark');
-              zone.querySelector('.friends').insertBefore(mark, e.target)
-            }
-        })
+        // zone.addEventListener('dragenter', e => {
+        //   e.preventDefault()
+        //   if(currentDrag.source !== zone) {
+        //     if(e.target.classList.contains('friends__item')) {
+        //       deleteShape();
+        //       console.log('bla')
+        //       const shape = document.createElement('li');
+        //       shape.classList.add('shape');
+        //       if(zone.children.length && !e.target.previousElementSibling.classList.contains('shape')) {
+        //         zone.insertBefore(shape, e.target);
+
+        //       }else if(zone.children.length && e.target.previousElementSibling.classList.contains('shape')) {
+        //         console.log('previous');
+        //       } else {
+        //         zone.appendChild(shape);
+        //         console.log('Нет детей' + zone.children.length)
+        //       }
+        //     } else {}
+        //   }
+        // })
 
         zone.addEventListener('dragover', (e) => {
             e.preventDefault();
@@ -218,17 +242,16 @@ auth()
         zone.addEventListener('drop', (e) => {
             if (currentDrag) {
                 e.preventDefault();
-
+                console.log(currentDrag.node.parentNode)
                 if (currentDrag.source !== zone) {
-                  console.log(zone.querySelector('.friends .mark'));
-                    console.log(e.target.classList);
-                    if (e.target.classList.contains('mark')) {
-                      zone.querySelector('.friends .mark').replaceWith(currentDrag.node);
-                    } else if(e.target.parentNode.classList.contains('friends__item')) {
-                      zone.querySelector('.friends').insertBefore(currentDrag.node, e.target.parentNode);
+                    if(e.target.parentNode.classList.contains('friends__item')) {
+                      zone.insertBefore(currentDrag.node, e.target.parentNode);
+                    } else if(e.target.classList.contains('friends__item')) {
+                      zone.insertBefore(currentDrag.node, e.target);
                     } else {
-                      zone.querySelector('.friends').appendChild(currentDrag.node);
+                      zone.appendChild(currentDrag.node);
                     }
+                    updateDataOnDnd(currentDrag.node)
                 }
 
                 currentDrag = null;
@@ -238,4 +261,4 @@ auth()
 }
 
 
-})
+});
