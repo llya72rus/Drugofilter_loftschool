@@ -159,6 +159,12 @@ button {
     min-height: 355px;
     background: #ffffff;
 
+    .note-img {
+      display: block;
+      position: relative;
+      margin: auto;
+    }
+
     &::before {
       content: "";
       position: absolute;

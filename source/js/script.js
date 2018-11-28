@@ -12,7 +12,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Закрывает панель списков
     panelClose.addEventListener('click', () => {
-        panel.remove();
+      const a = panel.querySelector('.panel__friends-wrapper')
+      const img = document.createElement("img");
+      img.src = 'img/img_1.jpg';
+      img.classList.add('note-img');
+      a.innerHTML = '';
+      a.appendChild(img);
     });
 
     const storage = localStorage;
@@ -272,6 +277,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 allFriends: leftArr,
                 selectedFriends: sortedRightArr
             });
+            alert('Сохранено!');
         })
     }
 
