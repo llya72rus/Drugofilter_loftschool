@@ -113,7 +113,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function updateDataOnDnd(target) {
         const id = target.dataset.id;
-        console.log(id);
         updateDataArrays(id, target.parentNode, 'friends-selected', 'friends-initial')
     }
 
