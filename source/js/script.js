@@ -1,14 +1,18 @@
 'use scrict';
+let leftArr = [],
+rightArr = [];
 document.addEventListener('DOMContentLoaded', function () {
 
     const panel = document.querySelector('.panel'),
         panelClose = panel.querySelector('.panel__close'),
         leftList = document.querySelector('.friends-initial'),
-        rightList = document.querySelector('.friends-selected');
+        rightList = document.querySelector('.friends-selected'),
+        leftInput = document.querySelector('#initial-list-input'),
+        rightInput = document.querySelector('#selected-list-input');
 
     // Переменные со списками друзей, которые будут впоследствии обновляться
-    let leftArr = [],
-        rightArr = [];
+    // let leftArr = [],
+    //     rightArr = [];
 
     // Закрывает панель списков
     panelClose.addEventListener('click', () => {
@@ -98,41 +102,62 @@ document.addEventListener('DOMContentLoaded', function () {
             const selectedElem = leftArr.filter((item) => item.id == id);
             leftArr.splice(leftArr.indexOf(...selectedElem), 1);
             rightArr.push(...selectedElem);
+            return selectedElem;
         } else if (target.classList.contains(secondClass)) {
             const selectedElem = rightArr.filter((item) => item.id == id);
             rightArr.splice(rightArr.indexOf(...selectedElem), 1);
             leftArr.push(...selectedElem);
+            return selectedElem;
         }
     }
 
     // В двух последующих функциях не смог добавлять id параметров, поэтому пришлось доп.функции updateOn... создать
     function updateDataOnClick(target) {
         const id = target.parentNode.dataset.id;
-        updateDataArrays(id, target, 'friends__add-btn', 'friends__remove-btn')
+        const [friend] = updateDataArrays(id, target, 'friends__add-btn', 'friends__remove-btn');
+        return friend;
     }
 
     function updateDataOnDnd(target) {
         const id = target.dataset.id;
-        updateDataArrays(id, target.parentNode, 'friends-selected', 'friends-initial')
+        const [friend] = updateDataArrays(id, target.parentNode, 'friends-selected', 'friends-initial');
+        return friend;
+    }
+
+    function filterFriendBasedOnInputValue(elem, input) {
+      const a = isMatching(elem.first_name, elem.last_name, input.value);
+      return a;
     }
 
 
 
-    function changeFriendsHTMLonClick(targ) {
+    function changeFriendsHTMLonClick(targ, friend) {
         if (targ.classList.contains('friends__add-btn')) {
+          if(filterFriendBasedOnInputValue(friend, rightInput)) {
             rightList.appendChild(targ.parentNode);
-        } else if (targ.classList.contains('friends__remove-btn')) {
+          } else {
+            targ.parentNode.remove();
+          }
+        } else if (targ.classList.contains('friends__remove-btn') ) {
+          if(filterFriendBasedOnInputValue(friend, leftInput) ) {
             leftList.appendChild(targ.parentNode);
+          } else {
+            targ.parentNode.remove();
+          }
         }
     }
 
     function handleFriendsReplacementOnClick() {
         const listWrapper = document.querySelector('.panel__friends-wrapper');
+        let friend = {};
         listWrapper.addEventListener('click', e => {
-            const target = e.target;
-            changeFriendsHTMLonClick(target);
-            updateDataOnClick(target);
+          const target = e.target;
+          if(target.tagName === 'BUTTON') {
+            friend = updateDataOnClick(target);
+            changeFriendsHTMLonClick(target, friend);
+          }
         })
+        return friend;
     }
 
 
@@ -239,6 +264,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             zone.addEventListener('drop', (e) => {
                 if (currentDrag) {
+
                     e.preventDefault();
                     if (currentDrag.source !== zone) {
                         if (e.target.parentNode.classList.contains('friends__item')) {
@@ -248,8 +274,19 @@ document.addEventListener('DOMContentLoaded', function () {
                         } else {
                             zone.appendChild(currentDrag.node);
                         }
-                        updateDataOnDnd(currentDrag.node)
                     }
+                    const friend  = updateDataOnDnd(currentDrag.node);
+
+                    if(zone.classList.contains('friends-selected')) {
+                      if(!filterFriendBasedOnInputValue(friend, rightInput)) {
+                        currentDrag.node.remove();
+                      }
+                    } else if(zone.classList.contains('friends-initial')) {
+                      if(!filterFriendBasedOnInputValue(friend, leftInput)) {
+                        currentDrag.node.remove();
+                      }
+                    }
+
 
                     currentDrag = null;
                 }
@@ -257,7 +294,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Скопипастил функцию для сортировки по алфавиту правый список при обновлении страницы
     function sortByKey(array, key) {
         return array.sort(function (a, b) {
             const x = a[key];
