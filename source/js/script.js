@@ -23,10 +23,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const storage = localStorage;
 
     if (storage.friends) {
-        const leftInnerArr = JSON.parse(storage.friends).allFriends;
-        const rightInnerArr = JSON.parse(storage.friends).selectedFriends;
-        leftArr = leftInnerArr;
-        rightArr = rightInnerArr;
+        const leftStoredArr = JSON.parse(storage.friends).allFriends;
+        const rightStoredArr = JSON.parse(storage.friends).selectedFriends;
+        leftArr = leftStoredArr;
+        rightArr = rightStoredArr;
         fillListsOnPageLoaded();
         handleFriendsReplacement();
         makeDnD();
