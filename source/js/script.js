@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', function () {
         leftArr = leftStoredArr;
         rightArr = rightStoredArr;
         fillListsOnPageLoaded();
-        handleFriendsReplacement();
+        handleFriendsReplacementOnClick();
         makeDnD();
         filterLists();
         saveFriends();
@@ -81,7 +81,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 return friends.items;
 
             }).then((data) => {
-                handleFriendsReplacement();
+                handleFriendsReplacementOnClick();
                 makeDnD();
                 filterLists();
                 saveFriends();
@@ -118,7 +118,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 
-    function changeFriendsHTML(targ) {
+    function changeFriendsHTMLonClick(targ) {
         if (targ.classList.contains('friends__add-btn')) {
             rightList.appendChild(targ.parentNode);
         } else if (targ.classList.contains('friends__remove-btn')) {
@@ -126,11 +126,11 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    function handleFriendsReplacement() {
+    function handleFriendsReplacementOnClick() {
         const listWrapper = document.querySelector('.panel__friends-wrapper');
         listWrapper.addEventListener('click', e => {
             const target = e.target;
-            changeFriendsHTML(target);
+            changeFriendsHTMLonClick(target);
             updateDataOnClick(target);
         })
     }
