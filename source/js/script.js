@@ -1,6 +1,5 @@
 'use scrict';
-let leftArr = [],
-rightArr = [];
+
 document.addEventListener('DOMContentLoaded', function () {
 
     const panel = document.querySelector('.panel'),
@@ -11,8 +10,8 @@ document.addEventListener('DOMContentLoaded', function () {
         rightInput = document.querySelector('#selected-list-input');
 
     // Переменные со списками друзей, которые будут впоследствии обновляться
-    // let leftArr = [],
-    //     rightArr = [];
+    let leftArr = [],
+        rightArr = [];
 
     // Закрывает панель списков
     panelClose.addEventListener('click', () => {
