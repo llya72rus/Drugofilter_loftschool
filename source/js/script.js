@@ -257,7 +257,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Скопипастил нагло функцию для сортировки по алфавиту правый список при обновлении страницы
+    // Скопипастил функцию для сортировки по алфавиту правый список при обновлении страницы
     function sortByKey(array, key) {
         return array.sort(function (a, b) {
             const x = a[key];
